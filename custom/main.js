@@ -6,6 +6,10 @@ const FULL_MONETARY_FORMAT = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const COMPACT_FORMAT = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 0,
+});
+
 const CONFIG = {
   updateInterval: 1000 * 5,
 };
@@ -17,9 +21,9 @@ const CONFIG = {
  */
 function formatMonetary(value, format = "full") {
   if (format === "mills") {
-    return FULL_MONETARY_FORMAT.format(value / 1000_000) + "M";
+    return COMPACT_FORMAT.format(value / 1000_000) + "M";
   } else {
-    return FULL_MONETARY_FORMAT(value);
+    return FULL_MONETARY_FORMAT.format(value);
   }
 }
 
@@ -190,6 +194,9 @@ function updateCountryChartElement(el, data) {}
 
 function renderTotalCommodityIndicator(data) {
   console.log("rendering total commodity indicator", data);
+  document.querySelector(".X-total-gas").textContent = formatMonetary(data.gas, "mills");
+  document.querySelector(".X-total-oil").textContent = formatMonetary(data.oil, "mills");
+  document.querySelector(".X-total-coal").textContent = formatMonetary(data.coal, "mills");
   // ...
 }
 
@@ -199,6 +206,17 @@ function renderTotalCommodityIndicator(data) {
  */
 function renderTotalIndicator(totalEur) {
   console.log("rendering total indicator", totalEur);
+  document.querySelector(".X-total").textContent = formatMonetary(totalEur);
 }
 
-setInterval(CONFIG.updateInterval, main);
+
+// UTILS
+// ready(() => setInterval(main, CONFIG.updateInterval));
+ready(main);
+function ready(fn) {
+  if (document.readyState != "loading") {
+    fn();
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
+}
