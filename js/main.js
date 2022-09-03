@@ -1,12 +1,14 @@
 const COUNTER_URL =
-  "https://api.russiafossiltracker.com/v0/counter_last?destination_region=EU28&date_from=2022-02-24&fill_with_estimates=false&use_eu=false&commodity_grouping=default&aggregate_by=commodity,destination_region,destination_country&format=json";
+  "https://api.russiafossiltracker.com/v0/counter_last?destination_region=EU&date_from=2022-02-24&fill_with_estimates=false&use_eu=true&commodity_grouping=default&aggregate_by=destination_country,commodity_group&format=json";
 const FULL_MONETARY_FORMAT = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "EUR",
   maximumFractionDigits: 0,
 });
 
-const CONFIG = {};
+const CONFIG = {
+  updateInterval: 1000 * 5,
+};
 
 /**
  *
@@ -24,11 +26,11 @@ function formatMonetary(value, format = "full") {
 /**
  * @typedef {Object} CommodityTotal
  * @property {number} oil
- * @property {number} gaz
+ * @property {number} gas
  * @property {number} coal
  *
  *
- * @typedef {"oil" | "gaz" | "coal"} Commodity
+ * @typedef {"oil" | "gas" | "coal"} Commodity
  */
 
 /**
@@ -52,7 +54,7 @@ function processCounterData(data) {
    */
   const commodityTotals = {
     oil: 0,
-    gaz: 0,
+    gas: 0,
     coal: 0,
   };
 
@@ -65,18 +67,18 @@ function processCounterData(data) {
    *
    *
    * @typedef {Object} ChartItemDTO
-   * @property {Commodity} commodityGroup
+   * @property {number} gas
+   * @property {number} coal
+   * @property {number} oil
    * @property {number} totalEur
    *
-   * @typedef {Object} CountryChartDTO
-   * @property {ChartItemDTO[]} items
-   * @property {number} totalEur
-   *
-   * @typedef {CountryTotal}
+   * @typedef {Object} CountryTotal
    * @property {Country} country
-   * @property {CountryChartDTO} data
+   * @property {ChartItemDTO} data
    *
-   *
+   */
+
+  /**
    * @type {CountryTotal[]}
    */
   const countryTotals = [];
@@ -84,6 +86,10 @@ function processCounterData(data) {
   let lastCountryCode = null;
 
   for (const item of data) {
+    if (item.commodity_group === "total") {
+      // skip total records
+      continue;
+    }
     total += item.total_eur;
     commodityTotals[item.commodity_group] += item.total_eur;
 
@@ -91,20 +97,24 @@ function processCounterData(data) {
       lastCountryCode = item.destination_iso2;
 
       countryTotals.push({
-        country: item.destination_country,
+        country: {
+          code: item.destination_iso2,
+          name: item.destination_country,
+        },
         data: {
-          [item.commodity_group]: item.total_eur,
-					totalEur: item.total_eur,
+          gas: 0,
+          oil: 0,
+          coal: 0,
+          totalEur: 0,
         },
       });
-    } else {
-      countryTotals[countryTotals.length - 1].data[item.commodity_group] +=
-        item.total_eur;
-			countryTotals[countryTotals.length - 1].data.totalEur += item.total_eur;
     }
+    const currentTotal = countryTotals[countryTotals.length - 1].data;
+    currentTotal[item.commodity_group] += item.total_eur;
+    currentTotal.totalEur += item.total_eur;
   }
 
-  countryTotals.sort();
+  countryTotals.sort((a, b) => b.data.totalEur - a.data.totalEur);
 
   return {
     total,
@@ -113,6 +123,16 @@ function processCounterData(data) {
   };
 }
 async function fetchCounterData() {
+  return fetch(COUNTER_URL)
+    .then((res) => {
+      if (res.ok) {
+        return res.json();
+      } else {
+        throw new Error("Failed to fetch counter data");
+      }
+    })
+    .then((payload) => payload.data)
+    .catch(console.error);
   // ...
 }
 
@@ -132,41 +152,36 @@ async function main() {
  * @param {CountryTotal[]} param0.countryTotals
  */
 function renderIndicators({ total, commodityTotals, countryTotals }) {
-	renderTotalIndicator(total)
+  renderTotalIndicator(total);
   renderTotalCommodityIndicator(commodityTotals);
   countryTotals.map(renderCountryChart);
 }
 
-
 /**
- * 
- * @param {CountryTotal[]} countryTotals 
+ *
+ * @param {CountryTotal[]} countryTotals
  */
 function renderCountryChart(countryTotals) {
+  console.log("rendering country chart", countryTotals);
   // if placeholder, render initially
   // else, update
   // check ordering
 }
 
-
 /**
- * @param {Country} country
- * @param {CountryChartDTO} data
+ * @param {CountryTotal} countryTotal
  */
-function renderCountryChartItem(country, data) {
-  console.log(rendering )
+function renderCountryChartItem(countryTotal) {
+  console.log(rendering);
   // ...
 }
 
 /**
- * 
- * @param {HTMLElement} el 
- * @param {CountryChartDTO} data 
+ *
+ * @param {HTMLElement} el
+ * @param {ChartItemDTO} data
  */
-function updateCountryChartElement(el, data) {
-
-
-}
+function updateCountryChartElement(el, data) {}
 
 /**
  *
@@ -174,12 +189,16 @@ function updateCountryChartElement(el, data) {
  */
 
 function renderTotalCommodityIndicator(data) {
+  console.log("rendering total commodity indicator", data);
   // ...
 }
 
-
 /**
- * 
- * @param {number} totalEur 
+ *
+ * @param {number} totalEur
  */
-function renderTotalIndicator(totalEur) {}
+function renderTotalIndicator(totalEur) {
+  console.log("rendering total indicator", totalEur);
+}
+
+setInterval(CONFIG.updateInterval, main);

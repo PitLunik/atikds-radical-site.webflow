@@ -1121,3 +1121,7 @@
   grid-row-end: span 1;
 }
 
+
+.country-chart-item {
+  display: contents;
+}
