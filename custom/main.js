@@ -265,8 +265,11 @@ function renderTotalIndicator(totalEur) {
 
 
 // UTILS
-// ready(() => setInterval(main, CONFIG.updateInterval));
-ready(main);
+ready(() => {
+  setInterval(main, CONFIG.updateInterval)
+  main();
+});
+// ready(main);
 function ready(fn) {
   if (document.readyState != "loading") {
     fn();

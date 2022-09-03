@@ -10,3 +10,7 @@
 .scroll-wrapper {
   overflow-x: scroll;
 }
+.outline-heading {
+  color: transparent;
+  -webkit-text-stroke: 0.75px #d0d0d0;
+}
