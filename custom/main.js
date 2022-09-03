@@ -210,13 +210,13 @@ function renderCountryChartItem(el, countryTotal, topCountryTotal) {
 function updateCountryChartElement(el, countryTotal, topCountryTotal) {
   const {country, data} = countryTotal
 
-  const totalPercent = (data.totalEur / topCountryTotal) * 100;
+  const totalPercent = Math.max(1,(data.totalEur / topCountryTotal) * 100);
   const gasPercent = (data.gas / data.totalEur) * 100;
   const oilPercent = (data.oil / data.totalEur) * 100;
   const coalPercent = (data.coal / data.totalEur) * 100;
 
   const flag = el.querySelector(".flag");
-  flag.src = `images/${country.name}-${country.code}.png`;
+  flag.src = `images/flags/${country.code}.png`;
 
   const countryName = el.querySelector(".country-name");
   countryName.textContent = country.name;

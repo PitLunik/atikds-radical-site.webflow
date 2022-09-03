@@ -350,6 +350,7 @@
 .flag {
   width: 19px;
   height: 14.5px;
+  border-radius: 8px;
 }
 
 .grid-2 {

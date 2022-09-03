@@ -7,3 +7,6 @@
   border-bottom-left-radius: 264px;
   border-bottom-right-radius: 264px;
 }
+.scroll-wrapper {
+  overflow-x: scroll;
+}
