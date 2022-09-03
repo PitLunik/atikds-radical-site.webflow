@@ -2,3 +2,8 @@
 .country-chart-item {
   display: contents;
 }
+.boom-black-wrapper {
+  background: #171613;
+  border-bottom-left-radius: 264px;
+  border-bottom-right-radius: 264px;
+}

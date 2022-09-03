@@ -28,6 +28,25 @@ function formatMonetary(value, format = "full") {
 }
 
 /**
+ * @typedef {Object} Country
+ * @property {string} name
+ * @property {string} code
+ *
+ *
+ * @typedef {Object} ChartItemDTO
+ * @property {number} gas
+ * @property {number} coal
+ * @property {number} oil
+ * @property {number} totalEur
+ *
+ * @typedef {Object} CountryTotal
+ * @property {Country} country
+ * @property {ChartItemDTO} data
+ * 
+ *
+ */
+
+/**
  * @typedef {Object} CommodityTotal
  * @property {number} oil
  * @property {number} gas
@@ -64,23 +83,6 @@ function processCounterData(data) {
 
   let total = 0;
 
-  /**
-   * @typedef {Object} Country
-   * @property {string} name
-   * @property {string} code
-   *
-   *
-   * @typedef {Object} ChartItemDTO
-   * @property {number} gas
-   * @property {number} coal
-   * @property {number} oil
-   * @property {number} totalEur
-   *
-   * @typedef {Object} CountryTotal
-   * @property {Country} country
-   * @property {ChartItemDTO} data
-   *
-   */
 
   /**
    * @type {CountryTotal[]}
@@ -137,7 +139,6 @@ async function fetchCounterData() {
     })
     .then((payload) => payload.data)
     .catch(console.error);
-  // ...
 }
 
 async function main() {
@@ -158,7 +159,7 @@ async function main() {
 function renderIndicators({ total, commodityTotals, countryTotals }) {
   renderTotalIndicator(total);
   renderTotalCommodityIndicator(commodityTotals);
-  countryTotals.map(renderCountryChart);
+  renderCountryChart(countryTotals);
 }
 
 /**
@@ -167,25 +168,78 @@ function renderIndicators({ total, commodityTotals, countryTotals }) {
  */
 function renderCountryChart(countryTotals) {
   console.log("rendering country chart", countryTotals);
+  const topCountryTotal = countryTotals[0].data.totalEur;
   // if placeholder, render initially
+  const chartContainer = document.querySelector('.X-country-chart');
+  if (chartContainer.children.length === 0) {
+    countryTotals.forEach(ct => renderCountryChartItem(chartContainer, ct, topCountryTotal));
+  } else {
+    // update existing
+    const children = chartContainer.children;
+    for (let i = 0; i < children.length; i++) {
+      const el = children[i];
+      updateCountryChartElement(el, countryTotals[i], topCountryTotal);
+    }
+  }
+
   // else, update
   // check ordering
 }
 
 /**
+ * @param {HTMLElement} el
  * @param {CountryTotal} countryTotal
+ * @param {number} topCountryTotal
  */
-function renderCountryChartItem(countryTotal) {
-  console.log(rendering);
-  // ...
+function renderCountryChartItem(el, countryTotal, topCountryTotal) {
+  const template = document.querySelector('#X-country-chart-item-template');
+
+  // Clone the new row and insert it into the table
+  const clone = template.content.cloneNode(true);
+  updateCountryChartElement(clone, countryTotal, topCountryTotal);
+
+  el.appendChild(clone)
 }
 
 /**
  *
  * @param {HTMLElement} el
- * @param {ChartItemDTO} data
+ * @param {CountryTotal} countryTotal
+ * @param {number} topCountryTotal
  */
-function updateCountryChartElement(el, data) {}
+function updateCountryChartElement(el, countryTotal, topCountryTotal) {
+  const {country, data} = countryTotal
+
+  const totalPercent = (data.totalEur / topCountryTotal) * 100;
+  const gasPercent = (data.gas / data.totalEur) * 100;
+  const oilPercent = (data.oil / data.totalEur) * 100;
+  const coalPercent = (data.coal / data.totalEur) * 100;
+
+  const flag = el.querySelector(".flag");
+  flag.src = `images/${country.name}-${country.code}.png`;
+
+  const countryName = el.querySelector(".country-name");
+  countryName.textContent = country.name;
+
+  const chart = el.querySelector(".chart");
+
+  const chartLine = chart.querySelector(".gr-line")
+  chartLine.style.width = `${totalPercent}%`;
+  
+  const gasBar = chart.querySelector(".gas");
+  const oilBar = chart.querySelector(".oil");
+  const coalBar = chart.querySelector(".coal");
+
+  gasBar.style.width = `${gasPercent}%`;
+  oilBar.style.width = `${oilPercent}%`;
+  coalBar.style.width = `${coalPercent}%`;
+
+
+  const total = chart.querySelector(".eur");
+  total.textContent = formatMonetary(data.totalEur);
+
+
+}
 
 /**
  *
